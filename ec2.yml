@@ -1,0 +1,34 @@
+- hosts: localhost
+  gather_facts: false
+  vars_files: 
+           - key.yml
+  tasks:
+          - name : "kubernetes master node"
+            ec2:
+                    count: 1
+                    image: ami-010aff33ed5991201
+                    instance_type: t2.micro
+                    region: "ap-south-1"
+                    instance_tags:
+                            Name: "kubernetes master"
+                    group_id: "sg-0facc52a01c856e39"
+                    key_name: "first new instance"
+                    aws_access_key: "{{aws_access_key_id}}"
+                    aws_secret_key: "{{aws_secret_access_key}}"
+                    state: present
+                    wait: yes 
+
+          - name : "kubernetes slave nodes "
+            ec2:
+                    count: 2
+                    image: ami-010aff33ed5991201
+                    instance_type: t2.micro
+                    region: "ap-south-1"
+                    instance_tags:
+                            Name: "kubernetes slaves"
+                    group_id: "sg-0facc52a01c856e39"
+                    key_name: "first new instance"
+                    aws_access_key: "{{aws_access_key_id}}"
+                    aws_secret_key: "{{aws_secret_access_key}}"
+                    state: present
+                    wait: yes 

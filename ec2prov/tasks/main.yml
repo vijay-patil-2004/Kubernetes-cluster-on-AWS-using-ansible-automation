@@ -1,0 +1,18 @@
+---
+# tasks file for ec2prov
+
+           - name : "launching Ec2 instanse for k8s_multi_node_cluster"
+             ec2:
+                    count: "{{ count }}"
+                    image: "{{ image }}"
+                    instance_type: "{{ instance_type }}"
+                    region: "{{ region }}"
+                    group_id: "{{ sg_group }}"
+                    key_name: "{{ key_name }}"
+                    aws_access_key: "{{ user_name }}"
+                    aws_secret_key: "{{ passwd }}"
+                    state: present
+                    wait: yes
+                    instance_tags:
+                            Name: "{{ item }}"
+             loop: "{{instance_name}}"

@@ -1,0 +1,85 @@
+---
+# tasks file for master
+- name: "docker installation on aws ami"
+  package: 
+     name: docker
+     state: present
+
+- name: "Starting Docker"
+  service: 
+     name: docker
+     state:  restarted
+
+- name: "enable docker service"
+  shell: "systemctl enable docker --now"
+  changed_when: false
+
+- name: kubernetes repository
+  yum_repository:
+    name: "K8s_yum_repo"
+    description: "YUM_Repository for K8s"
+    baseurl: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
+    gpgcheck: no
+  ignore_errors: yes
+  changed_when: false
+
+- name: "Installing KubeAdm, kubectl and kubelet"
+  shell: "yum install -y  kubeadm  --disableexcludes=kubernetes"
+  changed_when: false    
+
+
+- name: "enabling the kubelate program"
+  shell: "systemctl enable kubelet  --now"
+  changed_when: false
+
+- name: "Pulling Images using KubeAdm"
+  shell: "kubeadm config  images pull"
+  changed_when: false
+
+- name: "Changing the driver to systemd"
+  shell: | 
+      cat <<EOF | sudo tee  /etc/docker/daemon.json
+      {
+      "exec-opts": ["native.cgroupdriver=systemd"]
+      }
+      EOF
+  changed_when: false
+
+- name: "Re-starting Docker"
+  service:
+     name: docker
+     state:  restarted
+- name: "Installing iproute-tc"
+  package: 
+     name: iproute-tc
+
+- name: "Setting bridge-nf-call-iptables to 1"
+  shell: | 
+       echo "1"  > /proc/sys/net/bridge/bridge-nf-call-iptables
+  changed_when: false
+
+- name: "initilizing the master with ignoring error for memory and cpu"
+  shell: "kubeadm init --pod-network-cidr=10.244.0.0/16  --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem"
+  ignore_errors: yes
+  register: init
+  
+- name: "Creating .kube directory"
+  shell: "mkdir -p $HOME/.kube"
+
+- name: "Copying /etc/kubernetes/admin.conf $HOME/.kube/config"
+  shell: "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config"
+
+- name: "changing owner permission"
+  shell: "sudo chown $(id -u):$(id -g) $HOME/.kube/config"
+
+- name: "Running Flannel Command"
+  shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+
+- name: "Generating Token"
+  shell: "kubeadm token  create  --print-join-command"
+  register: tokens
+  ignore_errors: yes
+
+- debug: 
+    var: tokens.stdout_lines
+  register: tokens

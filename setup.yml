@@ -1,0 +1,17 @@
+- hosts: localhost
+  roles:
+          - name: "launching ec2-instance" 
+            role: "/root/ansiblews/task19/ec2prov/"
+- hosts: "tag_Name_kubernetes_Master"
+  roles:
+          - name: "configuring k8s  master node"
+            role: "/root/ansiblews/task19/master"
+
+- hosts: ["tag_Name_kubernetes_slave1","tag_Name_kubernetes_slave2"]
+  vars_prompt:
+          - name: joincmd
+            prompt: "Enter the command to join the worker nodes to the master nodes- "
+            private: no
+  roles:
+          - name: "configuring k8s  master node"
+            role: "/root/ansiblews/task19/slave"
